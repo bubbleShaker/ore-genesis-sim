@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>鉱石生成シミュレーション | ore-genesis-sim</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>鉱石生成シミュレーション</h1>
+        <p class="subtitle">過飽和・過冷却からの結晶核生成と成長を眺める</p>
+      </header>
+      <main>
+        <canvas id="sim-canvas" width="512" height="512"></canvas>
+        <aside id="panel">
+          <p class="placeholder">Phase 0: 足場のみ。シミュレーションは Phase 1 から。</p>
+        </aside>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
