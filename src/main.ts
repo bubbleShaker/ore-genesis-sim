@@ -1,20 +1,42 @@
 /**
  * 合成ルート（composition root）。
  * 各レイヤー（core / domain / render / ui）をここで配線する。
- * Phase 0 では canvas の取得と WebGL2 利用可否の確認のみ。実体は Phase 1 以降で追加する。
+ * Phase 1: WebGL2 ping-pong による Gray-Scott 反応拡散を rAF ループで表示する。
  */
 import './style.css';
+import { GpuContext } from './core/GpuContext';
+import { Simulator } from './core/Simulator';
+import { DisplayShader } from './render/DisplayShader';
+
+const SIZE = 512; // シミュレーション解像度（正方グリッド）
+const STEPS_PER_FRAME = 8; // 1 フレームあたりの計算ステップ数（成長の速さ）
 
 const canvas = document.querySelector<HTMLCanvasElement>('#sim-canvas');
 if (!canvas) {
   throw new Error('sim-canvas が見つからない');
 }
-
-// WebGL2 が使えるかだけ先に確認しておく（Phase 1 の前提）。
-const gl = canvas.getContext('webgl2');
 const panel = document.querySelector<HTMLElement>('#panel .placeholder');
-if (panel) {
-  panel.textContent = gl
-    ? 'Phase 0 OK: WebGL2 が利用可能。Phase 1 でシミュレーションを実装する。'
-    : 'WebGL2 が利用できない環境。Phase 1 以降の動作には WebGL2 が必要。';
+
+try {
+  const ctx = new GpuContext(canvas);
+  const sim = new Simulator(ctx, SIZE, SIZE);
+  const display = new DisplayShader(ctx);
+
+  if (panel) {
+    panel.textContent =
+      'Phase 1: Gray-Scott 反応拡散が動作中。過飽和からの「核」が拡散・反応してパターンを作る様子。';
+  }
+
+  const loop = () => {
+    sim.step(STEPS_PER_FRAME);
+    display.render(sim.stateTexture, canvas.width, canvas.height);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  if (panel) {
+    panel.textContent = `初期化に失敗: ${message}`;
+  }
+  throw err;
 }
