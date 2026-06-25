@@ -51,4 +51,6 @@ main {
 .placeholder {
   color: #c0c0cc;
   line-height: 1.6;
+  /* パネル文字列の "\n" を改行として表示する（余分な空白は畳む）。 */
+  white-space: pre-line;
 }

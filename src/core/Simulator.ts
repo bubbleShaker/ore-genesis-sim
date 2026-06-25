@@ -4,24 +4,14 @@ import { ShaderProgram } from './ShaderProgram';
 import { createSeed } from './seed';
 import fullscreenVert from './shaders/fullscreen.vert?raw';
 import grayscottFrag from './shaders/grayscott.frag?raw';
+// パラメータ型は domain が唯一の定義元。core はそれを参照する（依存の向き domain ← core）。
+import type { GrayScottParams } from '../domain/genesis';
+import { GROWTH } from '../domain/genesis';
 
-/** Gray-Scott のパラメータ。プリセットで模様が大きく変わる。 */
-export interface GrayScottParams {
-  feed: number;
-  kill: number;
-  dA: number;
-  dB: number;
-  dt: number;
-}
+export type { GrayScottParams };
 
-/** 「coral（サンゴ状）」プリセット。Phase 1 の動作確認用。 */
-export const CORAL: GrayScottParams = {
-  feed: 0.0545,
-  kill: 0.062,
-  dA: 1.0,
-  dB: 0.5,
-  dt: 1.0,
-};
+/** 「coral（サンゴ状）」プリセット。Phase 1 の動作確認用。GROWTH と同値。 */
+export const CORAL: GrayScottParams = GROWTH;
 
 /**
  * 反応拡散シミュレーションを1ステップずつ進める。
@@ -33,7 +23,7 @@ export class Simulator {
   private readonly ctx: GpuContext;
   private readonly program: ShaderProgram;
   private readonly buffer: PingPongFBO;
-  private readonly params: GrayScottParams;
+  private params: GrayScottParams;
   readonly width: number;
   readonly height: number;
 
@@ -49,6 +39,15 @@ export class Simulator {
     this.params = params;
     this.program = new ShaderProgram(ctx.gl, fullscreenVert, grayscottFrag);
     this.buffer = new PingPongFBO(ctx.gl, width, height, createSeed(width, height));
+  }
+
+  /**
+   * 反応拡散パラメータを差し替える。
+   * 成因ドライバ（domain）が時間とともに算出した値を毎フレーム流し込む口。
+   * バッファや状態テクスチャは保持したまま、次の step から新パラメータが効く。
+   */
+  setParams(params: GrayScottParams): void {
+    this.params = params;
   }
 
   /** N ステップ進める（1 フレームで複数ステップ回すと成長が速く見える）。 */
