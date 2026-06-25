@@ -29,15 +29,6 @@ export interface GrayScottParams {
   dt: number;
 }
 
-/** 過飽和に達する前。kill が高く、生成物 V が育たない＝模様が出ない静穏状態。 */
-export const QUIESCENT: GrayScottParams = {
-  feed: 0.0545,
-  kill: 0.07,
-  dA: 1.0,
-  dB: 0.5,
-  dt: 1.0,
-};
-
 /** 十分に過冷却・過飽和した状態。サンゴ状に「核生成→成長」する。 */
 export const GROWTH: GrayScottParams = {
   feed: 0.0545,
@@ -45,6 +36,18 @@ export const GROWTH: GrayScottParams = {
   dA: 1.0,
   dB: 0.5,
   dt: 1.0,
+};
+
+/**
+ * 過飽和に達する前の静穏状態。
+ * 冷却のレバーは kill ではなく dt（反応の時間刻み）に持たせる。
+ * feed/kill/dA/dB は GROWTH と同じ「育つ領域」のまま dt を小さくし、反応をほぼ止める。
+ * → 種(V) が消えないので、後で dt が上がると核生成→成長が必ず再開できる。
+ * （kill を上げて静穏にすると V が全面 0 に死に、二度と模様が出ない＝以前の真っ黒バグ）
+ */
+export const QUIESCENT: GrayScottParams = {
+  ...GROWTH,
+  dt: 0.15,
 };
 
 /** 成因シナリオの設定。冷却の速さと、析出が始まる温度しきい値。 */
