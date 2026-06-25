@@ -60,9 +60,27 @@ describe('paramsForGenesis', () => {
     expect(paramsForGenesis(0, { threshold: 0.6 })).toEqual(QUIESCENT);
   });
 
-  it('十分冷えると成長パラメータへ近づく（kill が QUIESCENT より下がる）', () => {
+  // 指数冷却なので progress は 1.0 に漸近するだけ＝GROWTH へ「近づく」のが正しい挙動。
+  it('十分冷えると成長パラメータ（GROWTH）へ近づく', () => {
     const p = paramsForGenesis(1, { coolingRate: 5 });
-    expect(p.kill).toBeLessThan(QUIESCENT.kill);
-    expect(p.kill).toBeGreaterThanOrEqual(GROWTH.kill);
+    expect(p.kill).toBeCloseTo(GROWTH.kill); // kill は元から一定
+    expect(p.dt).toBeGreaterThan(0.9); // dt はほぼ全速まで上がる
+    expect(p.dt).toBeLessThanOrEqual(GROWTH.dt);
+  });
+
+  // 真っ黒バグの再発防止: 冷却レバーは dt なので、全工程で kill は GROWTH の
+  // 「育つ域」に固定され、種(V) が致死域に入ることが無いことを保証する。
+  it('全 t で kill が致死域に入らない（GROWTH.kill で一定）', () => {
+    for (const t of [0, 0.1, 0.3, 0.5, 0.7, 1]) {
+      expect(paramsForGenesis(t, { coolingRate: 3 }).kill).toBeCloseTo(GROWTH.kill);
+    }
+  });
+
+  it('dt は冷却が進むほど単調に増える（反応が速くなる）', () => {
+    const dtAt = (t: number) => paramsForGenesis(t, { coolingRate: 3 }).dt;
+    expect(dtAt(0)).toBeCloseTo(QUIESCENT.dt);
+    expect(dtAt(0.5)).toBeGreaterThan(dtAt(0));
+    expect(dtAt(1)).toBeGreaterThan(dtAt(0.5));
+    expect(dtAt(1)).toBeGreaterThan(0.9); // GROWTH.dt(=1.0) に漸近
   });
 });
