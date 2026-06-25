@@ -60,15 +60,24 @@ flowchart LR
 - `GENESIS_OPTS`（`coolingRate` / `threshold`）… 冷却の急峻さと析出開始温度
 - `STEPS_PER_FRAME`（既定 8）… 1 フレームの計算ステップ数（成長の速さ）
 
-`src/domain/genesis.ts` の `QUIESCENT` / `GROWTH` … feed/kill を変えると模様の質感が変わる。
+`src/domain/genesis.ts` の `QUIESCENT`（dt を上げ下げ＝静穏の深さ）/ `GROWTH`（feed/kill で模様の質感）。
+※ 冷却レバーは **dt** に持たせている。kill を静穏に使うと種(V) が死んで真っ黒になるため（下記）。
+
+## 実機で見つかった不具合と修正（#11 → #12 → #13）
+
+初回の実機目視で「起動後ずっと真っ黒」だった。
+原因は旧 `QUIESCENT`(kill=0.07) が Gray-Scott の **V 消滅領域**で、中央の種 V が死に、
+反応項 `U·V²=0` で二度と再生せず GROWTH に遷移しても黒のままだったこと。
+冷却レバーを **kill → dt** へ変更（`QUIESCENT = {...GROWTH, dt: 0.15}`）して、
+種を殺さずに「冷えると反応が速くなる」物語へ修正した。
+詳細と一般化した教訓は `knowledge/01-grayscott-seed-death.md` を参照。
 
 ## 検証結果
 
-- `npm test` … 2 files / 12 tests 緑
+- `npm test` … 2 files / 14 tests 緑（致死域回避・dt 単調増加の再発防止テスト含む）
 - `npm run build` … tsc + vite ビルド成功（dist 出力）
+- **実機目視（#11）** … 起動直後ほぼ静止 → 核生成 → サンゴ状に成長を確認済み
 
 ## 残課題
 
-- **実機（ブラウザ/GPU）での目視確認**は未実施。
-  「起動直後は模様が出ず、時間が進むと核生成→成長が見える」を実際の画面で確認する。
 - Phase 3 以降: 結晶成長 CA（対称性に応じたファセット）／鉱物ごとの結晶形（research/01 参照）。
